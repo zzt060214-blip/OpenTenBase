@@ -80,25 +80,23 @@ graph TB
 
 以下整理了 15 个核心术语，按认知顺序排列：
 
-| 序号 | 术语 | 英文 | 简明解释 | 验证来源 |
-|-----|------|------|---------|---------|
-| 1 | 协调节点 | Coordinator (CN) | 集群入口。用户始终连接 CN 而非 DN。它接收 SQL、解析优化、将查询拆分为片段下发到各 DN 并行执行，最后汇总返回。CN 只存元数据，不存用户数据。 | README Overview |
-| 2 | 数据节点 | DataNode (DN) | 集群的数据仓库。所有用户数据分布在各 DN 上，DN 并行执行 CN 下发的查询片段。每个 DN 可配主从，通过流复制实现高可用。 | README Overview |
-| 3 | 全局事务管理器 | GTM (Global Transaction Manager) | 集群的公证处。为每个事务分配全局唯一事务 ID（GXID）和全局快照，确保跨多个 DN 的分布式事务像单机一样满足 ACID。 | README Overview |
-| 4 | 分布式模式 | Distributed Mode | GTM + CN + DN 齐全的部署模式。数据按分片策略分布在多个 DN 上，支持横向扩展和并行计算，适合大数据量、高吞吐场景。 | README config.ini 字段说明 |
-| 5 | 集中式模式 | Centralized Mode | 仅部署 DN（含主从），不部署 GTM 和 CN。适合数据量不大但需高可用的场景，行为类似传统 PostgreSQL 主从架构。 | README config.ini 字段说明 |
-| 6 | 分片键 | Shard Key | 用 `distribute by shard(字段)` 指定的字段。系统按该字段值计算哈希，决定数据行存储在哪个 DN 上。其值、类型和长度均不可修改。 | 官方文档"基本使用" |
-| 7 | 数据分布策略 | Data Distribution Strategy | 建表时指定的数据存储方式。支持 SHARD（哈希分片）、REPLICATION（全量复制）、ROUNDROBIN（轮询）等，默认为 SHARD。 | 官方文档"基本使用" |
-| 8 | 节点组 | Node Group | DN 的逻辑分组。通过 `to group xxx` 指定，实现不同业务的数据物理隔离。每个集群默认包含 `default_group`。 | 官方文档"基本使用" + README_ZH |
-| 9 | 分片表 | Sharded Table | 数据按分片键哈希后分散存储在各 DN 上的表。分布式场景下最常用的表类型，适合数据量大且查询可带分片键的场景。 | 官方文档"基本使用" |
-| 10 | 复制表 | Replicated Table | 每个 DN 上都存有完整数据的表。适合数据量小、更新频率低、常用于跨库 JOIN 的维度表。写入时需同步所有 DN，性能较低。 | 官方文档"基本使用" |
-| 11 | 主从复制 | Master-Slave Replication | CN、DN、GTM 均支持主从架构。主节点处理读写，通过 PostgreSQL 流复制将数据同步到备节点，主故障时备可提升为主，保障高可用。 | README config.ini master/slave 字段 |
-| 12 | Shared-Nothing 架构 | Shared-Nothing Architecture | 各 DN 独立拥有 CPU、内存和存储，节点间不共享资源。新增机器即可线性扩展算力和存储，是分布式数据库横向扩展的基础。 | Postgres-XL 架构继承 |
-| 13 | opentenbase_ctl | — | 官方推荐的集群运维工具。支持安装、启停、状态查看、主备切换，通过 `opentenbase_config.ini` 描述集群拓扑。源码位于 `contrib/opentenbase_ctl/`。 | README 安装章节 + contrib 目录 |
-| 14 | opentenbase_config.ini | — | 集群部署核心配置文件。定义实例名称、部署模式（distributed/centralized）、各节点 IP、SSH 信息等。可由 `opentenbase_ctl` 自动生成模板。 | README 安装章节 |
-| 15 | HTAP | Hybrid Transactional/Analytical Processing | 混合事务分析处理。OpenTenBase 同时支持高并发 OLTP 事务处理和大规模 OLAP 分析查询，无需在两套系统间搬运数据。 | 官方文档站首页 |
-
-> **补充说明：** 早期版本使用 `pgxc_ctl` 工具和 `pgxc_ctl.conf` 配置文件（继承自 Postgres-XL），源码仍保留在 `contrib/pgxc_ctl/`。新版本推荐使用 `opentenbase_ctl` 和 `opentenbase_config.ini`，功能更完善，支持集中式模式部署。
+| 序号 | 术语 | 英文 | 简明解释 |
+|-----|------|------|---------|
+| 1 | 协调节点 | Coordinator (CN) | 集群入口。用户始终连接 CN 而非 DN。它接收 SQL、解析优化、将查询拆分为片段下发到各 DN 并行执行，最后汇总返回。CN 只存元数据，不存用户数据。 |
+| 2 | 数据节点 | DataNode (DN) | 集群的数据仓库。所有用户数据分布在各 DN 上，DN 并行执行 CN 下发的查询片段。每个 DN 可配主从，通过流复制实现高可用。 |
+| 3 | 全局事务管理器 | GTM (Global Transaction Manager) | 集群的公证处。为每个事务分配全局唯一事务 ID（GXID）和全局快照，确保跨多个 DN 的分布式事务像单机一样满足 ACID。 |
+| 4 | 分布式模式 | Distributed Mode | GTM + CN + DN 齐全的部署模式。数据按分片策略分布在多个 DN 上，支持横向扩展和并行计算，适合大数据量、高吞吐场景。 |
+| 5 | 集中式模式 | Centralized Mode | 仅部署 DN（含主从），不部署 GTM 和 CN。适合数据量不大但需高可用的场景，行为类似传统 PostgreSQL 主从架构。 |
+| 6 | 分片键 | Shard Key | 用 `distribute by shard(字段)` 指定的字段。系统按该字段值计算哈希，决定数据行存储在哪个 DN 上。其值、类型和长度均不可修改。 |
+| 7 | 数据分布策略 | Data Distribution Strategy | 建表时指定的数据存储方式。支持 SHARD（哈希分片）、REPLICATION（全量复制）、ROUNDROBIN（轮询）等，默认为 SHARD。 |
+| 8 | 节点组 | Node Group | DN 的逻辑分组。通过 `to group xxx` 指定，实现不同业务的数据物理隔离。每个集群默认包含 `default_group`。 |
+| 9 | 分片表 | Sharded Table | 数据按分片键哈希后分散存储在各 DN 上的表。分布式场景下最常用的表类型，适合数据量大且查询可带分片键的场景。 |
+| 10 | 复制表 | Replicated Table | 每个 DN 上都存有完整数据的表。适合数据量小、更新频率低、常用于跨库 JOIN 的维度表。写入时需同步所有 DN，性能较低。 |
+| 11 | 主从复制 | Master-Slave Replication | CN、DN、GTM 均支持主从架构。主节点处理读写，通过 PostgreSQL 流复制将数据同步到备节点，主故障时备可提升为主，保障高可用。 |
+| 12 | Shared-Nothing 架构 | Shared-Nothing Architecture | 各 DN 独立拥有 CPU、内存和存储，节点间不共享资源。新增机器即可线性扩展算力和存储，是分布式数据库横向扩展的基础。 |
+| 13 | opentenbase_ctl | — | 官方推荐的集群运维工具。支持安装、启停、状态查看、主备切换，通过 `opentenbase_config.ini` 描述集群拓扑。源码位于 `contrib/opentenbase_ctl/`。 |
+| 14 | opentenbase_config.ini | — | 集群部署核心配置文件。定义实例名称、部署模式（distributed/centralized）、各节点 IP、SSH 信息等。可由 `opentenbase_ctl` 自动生成模板。 |
+| 15 | HTAP | Hybrid Transactional/Analytical Processing | 混合事务分析处理。OpenTenBase 同时支持高并发 OLTP 事务处理和大规模 OLAP 分析查询，无需在两套系统间搬运数据。 |
 
 ---
 
