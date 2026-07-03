@@ -16,7 +16,8 @@ OpenTenBase has many language interfaces similar to PostgreSQL, many of which ar
 An OpenTenBase cluster consists of multiple CoordinateNodes, DataNodes, and GTM nodes. All user data resides in the DataNodes, the CoordinateNode contains only metadata, the GTM is for global transaction management. The CoordinateNodes and DataNodes share the same schema.
 
 Users always connect to the CoordinateNodes, which divide up the query into fragments that are executed in the DataNodes, and collect the results.
-For a comprehensive glossary of architectural terms and a newcomer guide, see [Glossary & Newcomer Guide](doc/GLOSSARY.md) (中文版: [术语表与新手导览](doc/GLOSSARY_ZH.md))
+
+    For a comprehensive glossary of architectural terms and a newcomer guide, see [Glossary & Newcomer Guide](doc/GLOSSARY.md)
 
 The latest version of this software may be obtained at:
 
